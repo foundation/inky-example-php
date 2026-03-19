@@ -1,0 +1,8 @@
+{
+  "name": "foundation/inky-example-php",
+  "description": "Example: Using Inky email framework with PHP",
+  "require": {
+    "php": ">=8.1",
+    "foundation/inky": "^2.0"
+  }
+}

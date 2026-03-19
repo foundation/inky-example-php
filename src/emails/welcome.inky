@@ -1,0 +1,9 @@
+<container>
+  <row>
+    <column sm="12" lg="12">
+      <h1>Welcome, {{ user_name }}!</h1>
+      <p>Thanks for signing up. We're excited to have you on board.</p>
+      <button href="{{ cta_url }}">Get Started</button>
+    </column>
+  </row>
+</container>

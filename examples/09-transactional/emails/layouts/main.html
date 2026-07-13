@@ -1,0 +1,36 @@
+<!--
+  Base layout for this capstone's self-contained emails/ tree — the exact
+  shape a CMS like Total CMS points its template renderer at: one
+  base_path (here, emails/, the directory passed as EmailRenderer's
+  templateDir two levels up in run.php), everything under it
+  root-relative.
+
+  KEY ENGINE RULE: every relative src/href anywhere in this tree resolves
+  against base_path — the ORIGINAL directory passed to Inky::build() (or,
+  via EmailRenderer, its templateDir) — regardless of which file contains
+  the tag. It is NEVER re-resolved relative to the referencing file's own
+  directory. This file lives one level below the root, in layouts/, but
+  its own <include> tags below still read "includes/header.html", NOT a
+  parent-directory traversal back up to header.html: a leading
+  dot-dot-slash here would walk OUTSIDE the base_path root and fail to
+  resolve, because base_path never shifts to track the current file's
+  location. Every src/href under emails/ is therefore written as if
+  standing at the root, with no parent-directory traversal anywhere in
+  this tree, no matter how deep the referencing file sits.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>$title|Northwind Coffee$</title>
+</head>
+<body>
+<include src="includes/header.html">
+<span class="preheader">$preheader|$</span>
+<container>
+  <yield>
+</container>
+<include src="includes/footer.html">
+</body>
+</html>

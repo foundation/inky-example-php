@@ -4,8 +4,14 @@
   Written for CMS integrators shipping inky inside a Twig-based CMS (e.g.
   Total CMS): this file mixes inky's own tags (<layout>, <container>,
   <raw>, ...) with real Twig syntax ({{ }}, {% %}, filters). There are two
-  valid orders to combine them — see run.php, which builds both, times
-  them, and asserts they agree for one recipient.
+  valid orders to combine them — see run.php one level up, which builds
+  both, times them, and asserts they agree for one recipient.
+
+  This file lives inside emails/ — the self-contained base_path run.php
+  passes to Inky::build() (see emails/layouts/main.html for the base-root
+  resolution rule this whole tree follows: every src/href below is
+  root-relative, with no parent-directory traversal, regardless of which
+  file references it).
 
   ORDER A — Twig first, then inky (`Inky::build`, no `data` option). Twig
   renders the FULL document — substituting every {{ }} and expanding the
@@ -99,8 +105,8 @@
   (registered in PHP, in run.php) is a genuinely Twig-only feature — inky's
   `data` merge has no mechanism for user-registered filters at all.
 #}
-<layout src="../../shared/layout.html" title="This week at Northwind Coffee">
-<link rel="stylesheet" href="../../shared/themes/northwind.scss">
+<layout src="layouts/main.html" title="This week at Northwind Coffee">
+<link rel="stylesheet" href="themes/northwind.scss">
 <container>
   <row>
     <column lg="12">

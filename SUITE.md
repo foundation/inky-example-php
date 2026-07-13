@@ -11,9 +11,38 @@ language.
 
 Every example lives in `examples/NN-name/`, ships a `run.php` (the tutorial)
 and a `verify.php` (the smoke test), and writes its output to
-`dist/NN-name/`. Shared fixtures (brand layout, includes, SCSS themes) live
-in `shared/` at the repo root. `src/EmailRenderer.php` is the small
-production-shaped renderer used by examples 09 and 10.
+`dist/NN-name/`. `src/EmailRenderer.php` is the small production-shaped
+renderer used by example 09 (example 10 mirrors its shell-caching idea by
+hand, without calling it directly).
+
+**Two coexisting fixture conventions, on purpose:**
+
+- **Examples 01–08** reference shared fixtures (brand layout, includes,
+  SCSS themes) in `shared/` at the repo root, via `../../shared/...`
+  traversals from each example's `examples/NN-name/` base_path (see
+  "Runtime requirements" §2 below for why it's double, not single, `..`).
+  This is fine for tutorial fixtures: it keeps eight independent lessons
+  from each carrying their own copy of the same handful of bytes, and
+  every example that uses them is read in isolation, not as a model of a
+  real app's directory layout.
+- **Examples 09 and 10 (the capstones)** instead each ship a
+  self-contained `emails/` tree — one `base_path` containing its own
+  `layouts/`, `themes/`, and `includes/` copies, with every internal
+  src/href written root-relative (no `../` anywhere inside the tree). This
+  is deliberate: the capstones exist to model the shape a real CMS
+  integration (Total CMS or similar) actually looks like on disk — one
+  directory an app points its renderer at, self-contained, that a
+  deployment can copy or version as a unit. A production integration
+  doesn't reach two levels up into a repo-root `shared/` folder; it owns
+  its own template tree. See each capstone's section below for the exact
+  layout and the resolution rule that makes root-relative paths work
+  regardless of which file inside the tree does the referencing.
+
+Stage C ports should reproduce both conventions as described: 01–08 keep
+the simple shared-fixture pattern (adjusted for that port's own
+`examples/NN-name/` → `shared/` depth), while 09 and 10 each get their own
+copied `emails/` base-root tree, not a reference back into a shared
+directory.
 
 ## The ten examples
 
@@ -27,7 +56,7 @@ production-shaped renderer used by examples 09 and 10.
 | 06 | validate-gate | CI gate before sending | `Inky::validate` | exits 1 on a bad template, prints rule ids; exits 0 on good |
 | 07 | migrate | v1→v2 upgrade | `Inky::migrate(WithDetails)` | `lg="` present, `large="` absent, change list printed |
 | 08 | outlook-hybrid | hybrid mode, bulletproof buttons, `<outlook>` | `build` + `hybrid` + `bulletproof_buttons` | `<!--[if mso]>`, `v:roundrect` |
-| 09 | transactional (capstone) | real 3-email set on shared layout/theme via EmailRenderer | `EmailRenderer` | welcome/receipt/reset .html+.txt, receipt totals row, zero warnings |
+| 09 | transactional (capstone) | real 3-email set on a self-contained `emails/` base-root tree via EmailRenderer | `EmailRenderer` | welcome/receipt/reset .html+.txt, receipt totals row, zero warnings |
 | 10 | twig-cms | BOTH Twig orders + timing | Twig + `build`; `build` once + Twig per-recipient | both outputs byte-equal, timing lines, `<raw>` teaching comment |
 
 Per-example detail sections (inputs, exact marker strings, notes) are filled
@@ -258,29 +287,66 @@ equal and non-zero.
 
 **Teaches:** a realistic three-email transactional set for a single product
 (Northwind Coffee) built through a small production-shaped service class
-(`EmailRenderer`) instead of raw `build` calls — one shared theme, one
-template directory, per-email JSON data, and a build-shell cache.
+(`EmailRenderer`) instead of raw `build` calls — one self-contained
+base-root template directory (mirroring the tree a real CMS integration
+would ship), per-email JSON data, and a build-shell cache.
 
-**Inputs:** `templates/welcome.inky`, `templates/receipt.inky`,
-`templates/password-reset.inky` (all using the shared layout, no template
-owns its own theme `<link>` — the renderer injects it), each paired with
-its own `data/*.json` file. `receipt.inky` has a hand-written `<table>`
-with a `{% for item in items %}` loop (wrapped in `<raw>`, defense-in-depth
-exactly as in 03-data-merge — `data` merges in the same call, so the loop
-is already expanded before the HTML parser runs) plus three trailing rows
-computed from data: subtotal, shipping, and a `<tr class="totals-row">`
-total.
+**Structure — the self-contained `emails/` base-root tree** (see "The ten
+examples" intro above for why this capstone differs from 01–08):
+
+```
+examples/09-transactional/emails/          <- the base_path (EmailRenderer templateDir)
+├── welcome.inky, receipt.inky, password-reset.inky
+├── layouts/main.html                      <- copy of shared/layout.html, adapted
+├── themes/northwind.scss                  <- copy of shared/themes/northwind.scss
+└── includes/header.html, footer.html      <- copies of shared/includes/*
+```
+
+`examples/09-transactional/data/*.json` and `cache/` (gitignored) sit
+OUTSIDE `emails/`, as siblings — they're example-specific test fixtures
+and build-shell cache, not part of the template tree a CMS would point a
+renderer at, so `run.php` reads them directly rather than through
+`EmailRenderer`.
+
+**Inputs:** `emails/welcome.inky`, `emails/receipt.inky`,
+`emails/password-reset.inky` (all using `emails/layouts/main.html`, no
+template owns its own theme `<link>` — the renderer injects it), each
+paired with its own `data/*.json` file. `receipt.inky` has a hand-written
+`<table>` with a `{% for item in items %}` loop (wrapped in `<raw>`,
+defense-in-depth exactly as in 03-data-merge — `data` merges in the same
+call, so the loop is already expanded before the HTML parser runs) plus
+three trailing rows computed from data: subtotal, shipping, and a
+`<tr class="totals-row">` total.
+
+**The resolution rule (KEY ENGINE RULE, stated in `emails/layouts/main.html`'s
+own header comment where a reader will actually see it):** every relative
+src/href anywhere under `emails/` resolves against `base_path` — the
+ORIGINAL directory passed to `Inky::build()` (here, `emails/` itself, via
+`EmailRenderer`'s `templateDir`) — regardless of which file inside the
+tree contains the tag. `emails/layouts/main.html` lives one level below
+the root but still writes `<include src="includes/header.html">`, not a
+parent-directory traversal back up to it — a leading `../` there would
+walk OUTSIDE `emails/` and fail, because `base_path` never shifts to
+track the referencing file's own location. This is the same underlying
+engine behavior documented in "Runtime requirements" §2 below for
+`shared/` and 01–08 (`base_path` is always the original call-site value,
+never re-derived per file); the capstones just apply it to a shallower,
+self-contained tree instead of a shared one two levels up.
 
 **API surface:** `EmailRenderer` (`src/EmailRenderer.php`). Constructed
-with `templateDir` = the example's OWN directory (`examples/09-transactional`,
-not its `templates/` subdirectory — templateDir doubles as the `build()`
-base_path, which must sit at the same `examples/NN-name/` depth as every
-other example; template filenames passed to `->render()` are therefore
-`"templates/....inky"`, relative to that base_path — see "Runtime
-requirements" below and `tests/email_renderer_test.php`'s own fixture
-layout, which follows the identical pattern), the shared northwind theme
-path, and a `cacheDir` under `cache/` (gitignored). `->render($template,
-$data)` merges data, resolves the theme, and caches the built shell.
+with `templateDir` = `examples/09-transactional/emails` (which doubles as
+the `build()` base_path — see "Runtime requirements" below and
+`tests/email_renderer_test.php`'s own fixture layout, which follows the
+same templateDir-doubles-as-base_path pattern, independent of this
+capstone's directory shape), `themePath` = `emails/themes/northwind.scss`
+(now INSIDE templateDir, not a shared path outside it — confirmed this
+still produces the clean `themes/northwind.scss` href via
+`relativeThemeHref()`'s `str_starts_with` branch, with no changes needed
+to `EmailRenderer` itself), and a `cacheDir` under `cache/` (gitignored,
+outside `emails/`). `->render($template, $data)` merges data, resolves
+the theme, and caches the built shell. Template filenames passed to
+`->render()` are now bare `"....inky"` names, relative to `emails/`
+itself — `emails/` no longer nests a separate `templates/` subdirectory.
 
 **Output:** `welcome.html` + `.txt`, `receipt.html` + `.txt`,
 `password-reset.html` + `.txt` (six files total; `plain_text` defaults to
@@ -307,18 +373,36 @@ takes) — two valid orders for combining a real Twig render with an inky
 `build`, and the one rule (`<raw>`) that makes the CMS's preferred fast
 path (build once, render per recipient) safe.
 
-**Inputs:** `newsletter.inky.twig` — a single file that is both a valid
-inky template (`<layout>`, `<container>`, `<raw>`) and a valid Twig
-template (`{{ subscriber.first_name }}`, `{{ subscriber.tier|loyalty_badge
-}}` — a custom, PHP-registered Twig filter with no MiniJinja equivalent,
-proving genuine Twig extensibility beyond what inky's own `data` merge
-speaks — and a `{% for product in products %}` loop over 3 static
-products). The loop is wrapped in `<raw>`, and here that's load-bearing,
-not defense-in-depth (see the file's own header comment for the full
-explanation, written for CMS integrators). The header comment also
-documents a narrower, empirically-found quirk (Twig whitespace-control
-dashes needed on the loop tags) — load-bearing for this example and
-instructive for anyone hitting the same shapes.
+**Structure — the self-contained `emails/` base-root tree** (same
+convention as 09-transactional — see "The ten examples" intro above for
+why the capstones differ from 01–08):
+
+```
+examples/10-twig-cms/emails/               <- the base_path (passed to Inky::build())
+├── newsletter.inky.twig
+├── layouts/main.html                      <- copy of shared/layout.html, adapted
+├── themes/northwind.scss                  <- copy of shared/themes/northwind.scss
+└── includes/header.html, footer.html      <- copies of shared/includes/*
+```
+
+`run.php`'s Twig `FilesystemLoader` root and both `Inky::build()` calls
+(Order A and Order B) all pass `emails/` as their base/base_path, so the
+same self-contained tree serves both engines.
+
+**Inputs:** `emails/newsletter.inky.twig` — a single file that is both a
+valid inky template (`<layout src="layouts/main.html">`,
+`<link href="themes/northwind.scss">`, `<container>`, `<raw>` — all
+root-relative, per `emails/layouts/main.html`'s resolution-rule comment)
+and a valid Twig template (`{{ subscriber.first_name }}`, `{{
+subscriber.tier|loyalty_badge }}` — a custom, PHP-registered Twig filter
+with no MiniJinja equivalent, proving genuine Twig extensibility beyond
+what inky's own `data` merge speaks — and a `{% for product in products
+%}` loop over 3 static products). The loop is wrapped in `<raw>`, and here
+that's load-bearing, not defense-in-depth (see the file's own header
+comment for the full explanation, written for CMS integrators). The
+header comment also documents a narrower, empirically-found quirk (Twig
+whitespace-control dashes needed on the loop tags) — load-bearing for
+this example and instructive for anyone hitting the same shapes.
 
 **API surface:**
 - **Order A (Twig first):** a full Twig `Environment` renders the
@@ -457,15 +541,32 @@ A checklist for whoever ports this suite to Node, Python, Ruby, or Go.
 Everything here is either a pointer back into this document or a fact that
 doesn't fit neatly under one example.
 
-1. **The `../../shared/...` convention is normative, not a PHP quirk.**
-   Every example lives at `examples/NN-name/`, one level under `examples/`,
-   itself one level under the repo root where `shared/` lives — so any
-   reference to `shared/` from an example's own template, or from within
-   `shared/layout.html`'s own includes, needs a double `../../`, not a
-   single `../`. See "Runtime requirements" §2 above for the empirical
-   verification and the exact failure mode of getting it wrong. Reproduce
-   the same `examples/NN-name/` → `shared/` depth in every port so the
-   traversal count doesn't have to change per language.
+1. **Two fixture conventions, applied to different examples — reproduce
+   both, don't collapse them into one.**
+   - **01–08** use the `../../shared/...` convention, and it's normative,
+     not a PHP quirk: every example lives at `examples/NN-name/`, one
+     level under `examples/`, itself one level under the repo root where
+     `shared/` lives — so any reference to `shared/` from an example's own
+     template, or from within `shared/layout.html`'s own includes, needs a
+     double `../../`, not a single `../`. See "Runtime requirements" §2
+     above for the empirical verification and the exact failure mode of
+     getting it wrong. Reproduce the same `examples/NN-name/` → `shared/`
+     depth in every port so the traversal count doesn't have to change per
+     language.
+   - **09 and 10 (the capstones) do NOT use `shared/` at all.** Each ships
+     its own self-contained `emails/` base-root tree — `emails/layouts/`,
+     `emails/themes/`, `emails/includes/`, each a COPY (not a symlink) of
+     the corresponding `shared/` fixture, adapted so every internal
+     src/href is root-relative (no `../` anywhere inside the tree; see the
+     09 and 10 sections above for the exact layout, and
+     `emails/layouts/main.html`'s own header comment for the resolution
+     rule). This is intentional, not an oversight to reconcile with #1
+     above: the capstones exist specifically to model what a real CMS
+     integration's on-disk template directory looks like, and a real
+     integration owns its own tree rather than reaching into a shared
+     fixtures folder. Every Stage C port's 09 and 10 needs its own copied
+     `emails/` tree, built the same way, not a reference back into that
+     language's equivalent of `shared/`.
 
 2. **Composer/runtime notes are PHP-specific mechanics, not requirements
    for other languages** — but each port needs its own equivalent sanity

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * 10 — twig-cms
  *
- * See the header comment in newsletter.inky.twig for the full CMS-
+ * See the header comment in emails/newsletter.inky.twig for the full CMS-
  * integrator explanation of Order A vs. Order B and why <raw> is
  * load-bearing here (not just defense-in-depth, as in 03-data-merge), plus
  * three narrower quirks found empirically while building this example.
@@ -13,11 +13,18 @@ declare(strict_types=1);
  * recipient 1 comes out the same document either way (see the comment
  * above that check for exactly what "the same" means and why), and times
  * both paths.
+ *
+ * emails/ is this capstone's self-contained base_path — the same
+ * base-root convention as 09-transactional's EmailRenderer tree (one
+ * root, layouts/themes/includes underneath, everything root-relative, no
+ * traversal outside it — see emails/layouts/main.html for the resolution
+ * rule). Both Inky::build() calls below pass emails/ as base_path.
  */
 
 require __DIR__ . '/../../bootstrap.php';
 
 $dist = inky_example('10-twig-cms');
+$emailsDir = __DIR__ . '/emails';
 
 // This is trusted, already-authored template content, not user input, so
 // autoescape is off — matching how inky's own `data` merge behaves (no
@@ -26,7 +33,7 @@ $dist = inky_example('10-twig-cms');
 // chosen applies identically either way; only the ORDER of Twig vs. inky
 // differs between them.
 $twig = new \Twig\Environment(
-    new \Twig\Loader\FilesystemLoader(__DIR__),
+    new \Twig\Loader\FilesystemLoader($emailsDir),
     ['autoescape' => false],
 );
 
@@ -64,7 +71,7 @@ function newsletter_context(array $recipient, array $products): array
     ];
 }
 
-$rawSource = file_get_contents(__DIR__ . '/newsletter.inky.twig');
+$rawSource = file_get_contents($emailsDir . '/newsletter.inky.twig');
 
 // `inline_css: false` in BOTH builds below is load-bearing, not cosmetic —
 // see the comment above Order B's build call for why.
@@ -75,7 +82,7 @@ $startA = hrtime(true);
 $orderAOutputs = [];
 foreach ($recipients as $recipient) {
     $twigHtml = $twig->render('newsletter.inky.twig', newsletter_context($recipient, $products));
-    $orderAOutputs[] = \Inky\Inky::build($twigHtml, __DIR__, $buildOptions)->html;
+    $orderAOutputs[] = \Inky\Inky::build($twigHtml, $emailsDir, $buildOptions)->html;
 }
 $durationA = (hrtime(true) - $startA) / 1_000_000;
 
@@ -100,7 +107,7 @@ $startB = hrtime(true);
 // data is always fully merged before inky ever runs (09-transactional);
 // it's specifically the survives-the-build, fill-in-later shape here that
 // needs this.
-$shell = \Inky\Inky::build($rawSource, __DIR__, $buildOptions)->html;
+$shell = \Inky\Inky::build($rawSource, $emailsDir, $buildOptions)->html;
 $shellTemplate = $twig->createTemplate($shell);
 $orderBOutputs = [];
 foreach ($recipients as $recipient) {

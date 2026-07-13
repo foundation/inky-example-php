@@ -108,6 +108,18 @@ the fast path unless X" — rather than "here are both, pick based on your
 constraints," that's a copy change worth making before this becomes the
 five-language contract.
 
+**Capstone layout update.** Since the decisions above were first written,
+09-transactional and 10-twig-cms were restructured at your request to each
+ship a self-contained `emails/` base-root tree (`emails/layouts/`,
+`emails/themes/`, `emails/includes/`, plus the templates themselves) in
+place of the `../../shared/...` traversals examples 01–08 still use. This
+models the recommended Total CMS integration shape more directly: one
+base_path a real app points its renderer at, root-relative throughout, no
+reach-back into a repo-level `shared/` folder. See `SUITE.md`'s "The ten
+examples" intro and the 09/10 sections for the exact layout and the
+resolution rule; Stage C ports are expected to reproduce this same
+`emails/` tree per capstone, not the `shared/` pattern.
+
 ## Known limitations
 
 - **Node/WASM has no pipeline binding.** `build`, `validate`, and

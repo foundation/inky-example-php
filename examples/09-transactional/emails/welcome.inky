@@ -1,4 +1,4 @@
-<layout src="../../shared/layout.html" title="Welcome to Northwind Coffee">
+<layout src="layouts/main.html" title="Welcome to Northwind Coffee">
 <container>
   <row>
     <column lg="12">

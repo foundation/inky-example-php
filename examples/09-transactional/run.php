@@ -23,21 +23,23 @@ require __DIR__ . '/../../src/EmailRenderer.php';
 $dist = inky_example('09-transactional');
 $cacheDir = __DIR__ . '/cache';
 
-// templateDir doubles as the base_path Inky::build() resolves every
-// relative path against, so it has to sit at the same examples/NN-name/
-// depth as every other example (see SUITE.md "Runtime requirements") — NOT
-// the templates/ subdirectory itself. Template filenames passed to
-// ->render() below are therefore "templates/....inky", relative to here.
+// This emails/ dir is the convention: what you'd point Total CMS (or any
+// real CMS) at — one self-contained base_path, everything under it
+// root-relative (layouts/, themes/, includes/ — see emails/layouts/main.html
+// for the resolution rule), no traversal outside the tree at all. It's the
+// same base_path EmailRenderer's templateDir doubles as for Inky::build();
+// template filenames passed to ->render() below are therefore bare
+// "....inky" names, relative to emails/ itself, not a "templates/" prefix.
 $renderer = new EmailRenderer(
-    __DIR__,
-    __DIR__ . '/../../shared/themes/northwind.scss',
+    __DIR__ . '/emails',
+    __DIR__ . '/emails/themes/northwind.scss',
     $cacheDir,
 );
 
 $emails = [
-    ['name' => 'welcome', 'template' => 'templates/welcome.inky', 'data' => 'data/welcome.json'],
-    ['name' => 'receipt', 'template' => 'templates/receipt.inky', 'data' => 'data/receipt.json'],
-    ['name' => 'password-reset', 'template' => 'templates/password-reset.inky', 'data' => 'data/password-reset.json'],
+    ['name' => 'welcome', 'template' => 'welcome.inky', 'data' => 'data/welcome.json'],
+    ['name' => 'receipt', 'template' => 'receipt.inky', 'data' => 'data/receipt.json'],
+    ['name' => 'password-reset', 'template' => 'password-reset.inky', 'data' => 'data/password-reset.json'],
 ];
 
 $summary = [];

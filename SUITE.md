@@ -93,12 +93,14 @@ with exactly 3 line items.
 without it, `{{ }}`/`{% %}` pass through untouched — useful when an ESP does
 its own merging).
 
-**The `<raw>` gotcha:** the loop's `{% for %}`/`{% endfor %}` markers are
-wrapped in `<raw>` because, sitting as bare text directly under `<table>`
-(outside a `<tr>`/`<td>`), they are exactly the shape of content that
-strict HTML5 tree-building treats as invalid and relocates out of the
-table — `<raw>` keeps that literal block untouched through that step. The
-template carries a 3-line comment explaining this at the loop site.
+**The `<raw>` gotcha:**
+When template tags are merged in the same build call (the `data` option),
+loops expand into real rows before parsing — `<raw>` is optional
+defense-in-depth. When tags must SURVIVE the build unexpanded (building a
+reusable shell that a template engine renders later, as in example 10),
+`<raw>` is REQUIRED around row-level tags: surviving bare `{% %}` text
+directly inside `<table>`/`<tbody>` gets relocated by HTML5 parsing rules.
+Ports must reproduce this distinction in their example 03 comment.
 
 **Output:** `order.html`.
 

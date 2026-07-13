@@ -13,10 +13,10 @@
           <th align="right">Qty</th>
           <th align="right">Price</th>
         </tr>
-        <!-- The loop that emits each item row is wrapped in raw: its
-             for/endfor markers would otherwise sit as bare text directly
-             under table (outside a row), which HTML5 parsing treats as
-             invalid and relocates out of the table, breaking the loop. -->
+        <!-- <raw> here is defense-in-depth: because we pass `data` to build(), the
+             loop expands into real <tr> rows BEFORE the HTML parser runs, so it
+             works without <raw> too. It becomes load-bearing when template tags
+             must SURVIVE the build (a cached shell rendered later - see example 10). -->
         <raw>
         {% for item in items %}
         <tr class="line-item">

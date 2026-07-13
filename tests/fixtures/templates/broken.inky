@@ -1,0 +1,4 @@
+<html><head><title>Broken</title></head>
+<body>
+<include src="does-not-exist.html">
+</body></html>

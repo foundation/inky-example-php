@@ -1,35 +1,27 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+// Runs every example in examples/*/run.php, in order.
+// --verify additionally checks each example's required output markers.
+require __DIR__ . '/bootstrap.php';
 
-use Inky\Inky;
+$verify = in_array('--verify', $argv, true);
+$failures = 0;
 
-$template = file_get_contents('src/emails/welcome.inky');
-
-// Build without data merge (template tags pass through)
-$html = Inky::transformInline($template);
-@mkdir('dist', 0755, true);
-file_put_contents('dist/welcome.html', $html);
-echo "built dist/welcome.html\n";
-
-// Build with data merge
-$data = file_get_contents('data/welcome.json');
-$merged = Inky::transformWithData($template, $data);
-file_put_contents('dist/welcome-merged.html', $merged);
-echo "built dist/welcome-merged.html\n";
-
-// Generate plain text
-$text = Inky::toPlainText($merged);
-file_put_contents('dist/welcome.txt', $text);
-echo "built dist/welcome.txt\n";
-
-// Validate
-$diagnostics = Inky::validate($template);
-$issues = json_decode($diagnostics, true);
-if (count($issues) > 0) {
-    echo "\nvalidation warnings:\n";
-    foreach ($issues as $d) {
-        echo "  [{$d['severity']}] {$d['rule']}: {$d['message']}\n";
+foreach (glob(__DIR__ . '/examples/*/run.php') as $script) {
+    $name = basename(dirname($script));
+    echo "\n=== {$name} ===\n";
+    passthru(PHP_BINARY . ' ' . escapeshellarg($script), $exit);
+    if ($exit !== 0 && $name !== '06-validate-gate') { // 06 demonstrates a failing gate on purpose; its run.php manages its own exit codes
+        fwrite(STDERR, "FAILED: {$name} (exit {$exit})\n");
+        $failures++;
+        continue;
     }
-} else {
-    echo "\nno validation issues found\n";
+    if ($verify) {
+        $check = dirname($script) . '/verify.php';
+        if (file_exists($check)) {
+            passthru(PHP_BINARY . ' ' . escapeshellarg($check), $vexit);
+            if ($vexit !== 0) { fwrite(STDERR, "VERIFY FAILED: {$name}\n"); $failures++; }
+        }
+    }
 }
+
+exit($failures === 0 ? 0 : 1);

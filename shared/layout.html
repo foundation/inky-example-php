@@ -1,0 +1,29 @@
+<!--
+  Shared brand layout for the Northwind Coffee example suite.
+
+  Resolution rule (verified empirically in Task 1, see SUITE.md
+  "Runtime requirements"): every relative src/href in this file — and in
+  anything it includes — resolves against the ORIGINAL base_path passed
+  to Inky::build() for the top-level template, NOT against this file's
+  own directory. Since every example lives at examples/NN-name/ (one
+  level below examples/, two levels below the repo root where shared/
+  lives), paths here use "../../shared/..." — the traversal that works
+  from an examples/NN-name/ base_path, not the single ".." you might
+  expect if resolution were relative to this file.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>$title|Northwind Coffee$</title>
+</head>
+<body>
+<include src="../../shared/includes/header.html">
+<span class="preheader">$preheader|$</span>
+<container>
+  <yield>
+</container>
+<include src="../../shared/includes/footer.html">
+</body>
+</html>

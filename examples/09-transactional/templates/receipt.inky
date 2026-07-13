@@ -1,0 +1,41 @@
+<layout src="../../shared/layout.html" title="Your Northwind Coffee receipt">
+<container>
+  <row>
+    <column lg="12">
+      <h1>Order {{ order_number }} receipt</h1>
+      <p>Thanks for your order, {{ customer.name }}! Here's what shipped.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <th align="left">Item</th>
+          <th align="right">Qty</th>
+          <th align="right">Price</th>
+        </tr>
+        <!-- <raw> here is defense-in-depth, same reasoning as 03-data-merge:
+             the 'data' option below expands this loop into real <tr> rows
+             before the HTML parser runs, so it works without <raw> too. See
+             10-twig-cms for the case where <raw> is load-bearing instead. -->
+        <raw>
+        {% for item in items %}
+        <tr class="line-item">
+          <td>{{ item.name }}</td>
+          <td align="right">{{ item.qty }}</td>
+          <td align="right">{{ item.price }}</td>
+        </tr>
+        {% endfor %}
+        </raw>
+        <tr>
+          <td colspan="2" align="right">Subtotal</td>
+          <td align="right">{{ subtotal }}</td>
+        </tr>
+        <tr>
+          <td colspan="2" align="right">Shipping</td>
+          <td align="right">{{ shipping }}</td>
+        </tr>
+        <tr class="totals-row">
+          <td colspan="2" align="right"><strong>Total</strong></td>
+          <td align="right"><strong>{{ total }}</strong></td>
+        </tr>
+      </table>
+    </column>
+  </row>
+</container>

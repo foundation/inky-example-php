@@ -35,7 +35,7 @@ composer run verify      # same, plus greps each output for required markers
 composer.json         path repo -> ../inky/bindings/php; twig/twig; scripts
 bootstrap.php          autoload + inky_example() dist-dir helper, shared by every run.php
 SUITE.md               language-neutral porting spec (the Stage C contract)
-src/EmailRenderer.php  small production-shaped render/theme/cache wrapper (examples 09, 10)
+src/EmailRenderer.php  small production-shaped render/theme/cache wrapper (example 09; the pattern example 10 adapts for a Twig CMS)
 shared/                brand layout, includes, SCSS themes used by every example
 examples/NN-name/      one directory per example: run.php (tutorial) + verify.php (smoke test)
 dist/                  build output (generated, gitignored)

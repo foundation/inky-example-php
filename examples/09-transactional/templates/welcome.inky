@@ -1,0 +1,15 @@
+<layout src="../../shared/layout.html" title="Welcome to Northwind Coffee">
+<container>
+  <row>
+    <column lg="12">
+      <h1>Welcome, {{ customer.name }}!</h1>
+      <p>Your {{ plan }} subscription is confirmed — your first bag ships this
+      week, roasted to order.</p>
+      <p>One last step: confirm your email so we know where to send tracking
+      updates.</p>
+      <button href="{{ activation_url }}">Confirm my email</button>
+      <p>Questions before your first shipment? Just reply to this email — a
+      real person on the roasting team reads every one.</p>
+    </column>
+  </row>
+</container>

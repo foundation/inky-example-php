@@ -256,11 +256,139 @@ equal and non-zero.
 
 ### 09 — transactional (capstone)
 
-*(filled in by the task that builds this example)*
+**Teaches:** a realistic three-email transactional set for a single product
+(Northwind Coffee) built through a small production-shaped service class
+(`EmailRenderer`) instead of raw `build` calls — one shared theme, one
+template directory, per-email JSON data, and a build-shell cache.
+
+**Inputs:** `templates/welcome.inky`, `templates/receipt.inky`,
+`templates/password-reset.inky` (all using the shared layout, no template
+owns its own theme `<link>` — the renderer injects it), each paired with
+its own `data/*.json` file. `receipt.inky` has a hand-written `<table>`
+with a `{% for item in items %}` loop (wrapped in `<raw>`, defense-in-depth
+exactly as in 03-data-merge — `data` merges in the same call, so the loop
+is already expanded before the HTML parser runs) plus three trailing rows
+computed from data: subtotal, shipping, and a `<tr class="totals-row">`
+total.
+
+**API surface:** `EmailRenderer` (`src/EmailRenderer.php`). Constructed
+with `templateDir` = the example's OWN directory (`examples/09-transactional`,
+not its `templates/` subdirectory — templateDir doubles as the `build()`
+base_path, which must sit at the same `examples/NN-name/` depth as every
+other example; template filenames passed to `->render()` are therefore
+`"templates/....inky"`, relative to that base_path — see "Runtime
+requirements" below and `tests/email_renderer_test.php`'s own fixture
+layout, which follows the identical pattern), the shared northwind theme
+path, and a `cacheDir` under `cache/` (gitignored). `->render($template,
+$data)` merges data, resolves the theme, and caches the built shell.
+
+**Output:** `welcome.html` + `.txt`, `receipt.html` + `.txt`,
+`password-reset.html` + `.txt` (six files total; `plain_text` defaults to
+true inside `EmailRenderer::render()`).
+
+**Cache behavior:** `run.php` detects a cache hit/miss from the outside
+(EmailRenderer doesn't report it directly) by counting `cache/*.json`
+files before and after each render — unchanged means the render reused an
+existing cache entry. It prints a `Cache` column per email. Running
+`run.php` a second time shows all three emails as hits.
+
+**Required output markers:** all six files exist; `receipt.html` contains
+a `$`-amount inside `<tr class="totals-row">...</tr>` (proves the computed
+total, not just a line item, rendered); a second `run.php` invocation's
+output contains the string `hit (served from cache)` exactly 3 times;
+zero warnings are reported across all three templates (the suite's own
+templates must be warning-clean — a real warning means fixing the
+template, not loosening this check).
 
 ### 10 — twig-cms
 
-*(filled in by the task that builds this example)*
+**Teaches:** integrating inky into a Twig-based CMS (the shape Total CMS
+takes) — two valid orders for combining a real Twig render with an inky
+`build`, and the one rule (`<raw>`) that makes the CMS's preferred fast
+path (build once, render per recipient) safe.
+
+**Inputs:** `newsletter.inky.twig` — a single file that is both a valid
+inky template (`<layout>`, `<container>`, `<raw>`) and a valid Twig
+template (`{{ subscriber.first_name }}`, `{{ subscriber.tier|loyalty_badge
+}}` — a custom, PHP-registered Twig filter with no MiniJinja equivalent,
+proving genuine Twig extensibility beyond what inky's own `data` merge
+speaks — and a `{% for product in products %}` loop over 3 static
+products). The loop is wrapped in `<raw>`, and here that's load-bearing,
+not defense-in-depth (see the file's own header comment for the full
+explanation, written for CMS integrators). The header comment also
+documents two narrower, empirically-found quirks (Twig whitespace-control
+dashes needed on the loop tags; a `"$<span>...</span>"` split to avoid a
+real inky-core bug in layout/yield substitution when literal `"$" +
+digits` reaches it) — both are load-bearing for this example and
+instructive for anyone hitting the same shapes.
+
+**API surface:**
+- **Order A (Twig first):** a full Twig `Environment` renders the
+  complete document per recipient (real data, real filters), THEN
+  `Inky::build` (no `data` option) runs the ordinary build pipeline over
+  that already-rendered HTML. Simple, always correct, one inky build per
+  recipient.
+- **Order B (inky first — the CMS fast path):** `Inky::build` runs ONCE,
+  with no `data` option, on the raw `.inky.twig` source (Twig syntax
+  passes through untouched, same no-op behavior as 03-data-merge without
+  `data`) producing a "shell" that still contains literal Twig syntax;
+  Twig then renders that cached shell per recipient. One inky build total,
+  regardless of recipient count.
+- Both builds use `inline_css: false` (see the code comment in `run.php`
+  for why this is load-bearing, not cosmetic: CSS inlining runs a second,
+  separate HTML parse over inky's own transform output, and at
+  shell-build time the still-unexpanded loop is not protected against
+  that second parse the way it's protected against the first).
+
+**The correctness claim:** Order A and Order B must produce the same
+document for recipient 1. They do, with one caveat found and reported
+while building this example — see "10-twig-cms: an engine-level finding"
+below. `run.php`'s equality check normalizes only the specific
+insignificant whitespace this caveat introduces (documented inline, with
+inky-core's own justification cited) before comparing; every other byte —
+all content, all attributes, all structure, all row counts — is compared
+as-is and any real divergence still fails the check.
+
+**Output:** `order-a-1.html`..`order-a-3.html`, `order-b-1.html`..
+`order-b-3.html` (six files — un-normalized, so the raw whitespace
+difference described above can be inspected directly).
+
+**Required output markers:** all six files exist; `order-a-1.html` and
+`order-b-1.html` are equal once insignificant inter-tag whitespace is
+normalized; stdout contains a line matching `orderA: X ms, orderB: Y ms
+(shell built once)`; no output file contains a literal `{{` (nothing
+un-rendered survives in the final documents).
+
+**10-twig-cms: an engine-level finding.** Building this example
+empirically surfaced three real inky-core behaviors worth flagging beyond
+the example itself (full detail, repro steps, and code pointers in
+task-4-report.md):
+1. `<raw>` protects its content from inky's component-transform HTML5
+   parse, but NOT from the separate parse CSS inlining performs over that
+   transform's output — a bare, still-unexpanded loop can be
+   foster-parented out of its table at that second stage even though
+   `<raw>` kept it safe at the first. Worked around here via
+   `inline_css: false`.
+2. `process_layout`'s `<yield>` substitution (`crates/inky-core/src/include.rs`)
+   splices child content into the layout via `Regex::replace()`, which
+   interprets `$`-prefixed sequences in the REPLACEMENT text as
+   capture-group backreferences. Any literal `"$"` immediately followed by
+   digits or a word character in a layout-based template's rendered
+   content — e.g. a plain "$17.00" — silently loses the `"$"` and the
+   digits/word up to the next `"$"` or line boundary. This affects any
+   layout-based template with a literal dollar amount already present in
+   its content when `build()` runs (not just Twig-rendered content), and
+   is unrelated to `data`/MiniJinja, which merges AFTER this step and is
+   unaffected. Worked around here by splitting the static `"$"` from the
+   digits with a tag boundary (`"$<span>17.00</span>"`).
+3. Pipeline-level whitespace cleanup (`break_long_lines` /
+   `collapse_closing_tags` in `crates/inky-core/src/pipeline.rs`) inserts
+   or folds newlines around table-structural tags unconditionally, based
+   on whatever document is in front of it when it runs. Because Order A
+   and Order B run inky's build at different points relative to Twig's
+   loop expansion, a raw-protected, multi-row loop can come out of the two
+   orders with different (but rendering-insignificant, per inky-core's own
+   comment on `break_long_lines`) whitespace between rows.
 
 ## Runtime requirements
 

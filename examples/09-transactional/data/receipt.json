@@ -1,0 +1,12 @@
+{
+  "order_number": "NW-20931",
+  "customer": { "name": "Priya Patel" },
+  "items": [
+    { "name": "Sumatra Mandheling, 12oz", "qty": 2, "price": "$16.00" },
+    { "name": "Kenya AA, 12oz", "qty": 1, "price": "$18.50" },
+    { "name": "Pour-over filter, 40-pack", "qty": 1, "price": "$9.00" }
+  ],
+  "subtotal": "$59.50",
+  "shipping": "$5.00",
+  "total": "$64.50"
+}

@@ -1,0 +1,124 @@
+{#
+  newsletter.inky.twig — an inky template that is ALSO a real Twig template.
+
+  Written for CMS integrators shipping inky inside a Twig-based CMS (e.g.
+  Total CMS): this file mixes inky's own tags (<layout>, <container>,
+  <raw>, ...) with real Twig syntax ({{ }}, {% %}, filters). There are two
+  valid orders to combine them — see run.php, which builds both, times
+  them, and asserts they agree for one recipient.
+
+  ORDER A — Twig first, then inky (`Inky::build`, no `data` option). Twig
+  renders the FULL document — substituting every {{ }} and expanding the
+  {% for %} loop below — before inky ever sees it; inky then only does
+  component transform, SCSS, and CSS inlining. Simple, always correct,
+  but costs a full inky build PER RECIPIENT.
+
+  ORDER B — inky first (the CMS fast path), then Twig per recipient.
+  `Inky::build` runs ONCE, with no `data` option, on this raw file — all
+  Twig syntax passes through untouched (inky's own MiniJinja merge step is
+  simply skipped when `data` isn't passed; see 03-data-merge). That one
+  build does layout/include resolution, component transform, and CSS
+  inlining a single time, producing a "shell" that still contains literal
+  Twig syntax — cache THAT instead of re-doing the inky build for every
+  recipient. Twig then renders the cached shell per recipient, which is
+  far cheaper than a full inky build per recipient. This is the shape a
+  CMS wants: template content changes rarely, recipients don't.
+
+  THE <raw> RULE — and here it stops being optional, unlike the
+  defense-in-depth framing in 03-data-merge's comment. In Order B, the
+  {% for %} loop below has NOT been expanded yet when inky's HTML5-based
+  component transform runs over this file. A bare, un-wrapped
+  {% for %}...{% endfor %} sitting directly inside <table> (outside any
+  <tr>) is, as far as the HTML5 parser is concerned, stray non-table
+  text — the spec's foster-parenting rule relocates it OUT of the table
+  entirely, silently detaching the loop from the rows it's meant to
+  produce and corrupting the newsletter for every recipient. (Order A
+  never hits this: by the time inky sees the document, Twig has already
+  expanded the loop into ordinary <tr> tags, which ARE valid table
+  content and are never foster-parented.) <raw> sidesteps the problem
+  because inky extracts <raw>...</raw> content BEFORE html5ever parses
+  anything at all, replacing it with an HTML COMMENT placeholder —
+  comments, unlike bare text, are legal directly inside <table>, so the
+  placeholder survives parsing exactly where it was, and the real
+  (untouched) content is spliced back in afterward. One consequence worth
+  knowing: content inside <raw> is invisible to inky's CSS inliner too, so
+  the product rows below use an explicit inline style="" instead of
+  relying on a framework class.
+
+  THREE MORE REAL QUIRKS THIS EXAMPLE HAD TO WORK AROUND, found empirically
+  while building it — all worth knowing if you hit unexplained diffs
+  between your own Order A/B outputs:
+
+  1. {%- for product in products -%} / {%- endfor -%} use Twig's explicit
+     whitespace-control dashes, and the loop body is written densely (no
+     stray blank lines). Without the dashes, indentation written around
+     those two tags leaks into the loop body's own leading/trailing text
+     once Twig expands it, and — because Order A normalizes whitespace
+     AFTER Twig has expanded the loop into 3 rows, while Order B normalizes
+     the ONE-row shell BEFORE Twig ever duplicates it — that leakage isn't
+     cleaned up the same way in both orders. The dashes make the loop
+     body's own whitespace fully explicit instead of relying on default
+     trimming heuristics.
+
+  2. Even with that, inky's pipeline-level cleanup (break_long_lines /
+     collapse_closing_tags in inky-core's pipeline.rs) inserts or folds
+     newlines around every <table>/<tbody>/<tr>/<td>/<th> tag it finds,
+     unconditionally, in whatever document is in front of it at the moment
+     it runs. Order A runs that cleanup on the FULLY-EXPANDED 3-row
+     document; Order B runs it ONCE on the 1-row shell, and Twig's later
+     per-recipient duplication has no further inky pass to reconcile the
+     seams between copies. The visible symptom is a whitespace-only
+     difference in the padding directly between table tags at row
+     boundaries — never in the rows' actual content. run.php's equality
+     check normalizes exactly that (and only that) before comparing — see
+     the comment there for why that's principled and not a cop-out.
+
+  3. The price cell writes "$<span>...</span>" rather than putting the "$"
+     in the data. inky's layout/`<yield>` substitution (used by every
+     example with a shared layout, including this one) turned out to
+     mishandle a literal "$" immediately followed by digits in the child
+     content — e.g. "$17.00" silently became ".00" — because that
+     substitution is implemented as a plain string replace where "$" has
+     special meaning. It only bites content that's already fully rendered
+     BEFORE inky's layout step runs, which is exactly Order A's shape
+     (Twig, then inky) — Order B's shell never has real prices in it at
+     that stage, only field references. Splitting the "$" from the digits
+     with a tag boundary avoids it while still rendering as "$17.00".
+
+  Inky's OWN `data` option (see 03-data-merge, 09-transactional) speaks a
+  MiniJinja dialect that is syntax-compatible with Twig for the simple
+  cases used here — {{ var }}, {% if %}, {% for %} mean the same thing to
+  both engines. Reach for `data` alone when a template only needs that.
+  Reach for real Twig, as here, when you need something a CMS's own Twig
+  environment already provides that `data` can't: filters, functions,
+  macros, template inheritance. The `loyalty_badge` filter below
+  (registered in PHP, in run.php) is a genuinely Twig-only feature — inky's
+  `data` merge has no mechanism for user-registered filters at all.
+#}
+<layout src="../../shared/layout.html" title="This week at Northwind Coffee">
+<link rel="stylesheet" href="../../shared/themes/northwind.scss">
+<container>
+  <row>
+    <column lg="12">
+      <h1>Hey {{ subscriber.first_name }}, here's what's roasting</h1>
+      <p>{{ subscriber.tier|loyalty_badge }} members get first pick of this
+      week's small-batch arrivals before we open the list to everyone
+      else.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <th align="left">New arrival</th>
+          <th align="right">Price</th>
+        </tr>
+<raw>
+{%- for product in products -%}
+<tr>
+<td style="padding:8px 0;">{{ product.name|upper }}</td>
+<td align="right" style="padding:8px 0;">$<span>{{ product.price }}</span></td>
+</tr>
+{%- endfor -%}
+</raw>
+</table>
+      <button href="{{ shop_url }}">Shop this week's arrivals</button>
+    </column>
+  </row>
+</container>

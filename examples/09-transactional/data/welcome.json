@@ -1,0 +1,5 @@
+{
+  "customer": { "name": "Marcus Lee" },
+  "plan": "Coffee Explorer",
+  "activation_url": "https://northwindcoffee.example/activate/8f2c1a"
+}

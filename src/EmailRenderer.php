@@ -28,6 +28,12 @@ final class EmailRenderer
      * Twig-compatible syntax). Warnings go to STDERR; failures throw
      * \Inky\BuildException (warnings attached).
      *
+     * Note: a cache HIT below returns early with an empty $warnings array
+     * — it never re-runs Inky::build(), so it has nothing to report.
+     * Warnings are only ever surfaced on the build that originally produced
+     * the cached entry; a warm run reporting zero warnings is not itself
+     * evidence that the template is warning-clean.
+     *
      * @param array<string, mixed> $data
      * @param array<string, mixed> $options extra Inky::build options
      */

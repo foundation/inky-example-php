@@ -12,10 +12,17 @@
       <!-- MSO conditional comments, explained: Outlook desktop (2007+) renders
            HTML email with Microsoft Word's layout engine, not a browser engine,
            so it ignores CSS gradients and border-radius. <outlook> and
-           <not-outlook> each compile to one half of a single conditional-comment
-           pair ("if mso" / "if !mso") wrapping the SAME content twice, so every
-           mail client parses only the half meant for it: Outlook gets a plain
-           bordered table, everyone else gets the styled gradient banner. -->
+           <not-outlook> each compile to their OWN complete, independent
+           MSO conditional comment, wrapping only ITS OWN content — not one
+           comment pair shared between them wrapping the same content twice.
+           <outlook>'s content is wrapped in a standard "if mso" conditional
+           comment; <not-outlook>'s is wrapped in the downlevel-revealed
+           "if not mso" form. Outlook's conditional-comment parser keeps only
+           the "if mso" block and discards the other outright, so it sees
+           just the plain bordered table; every other client ignores
+           ordinary conditional comments but still renders the
+           downlevel-revealed form's content, so it sees just the styled
+           gradient banner. -->
       <outlook>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #6f4e37;">
           <tr><td style="padding:20px;text-align:center;">Reserve Roast — limited micro-lot, while supplies last.</td></tr>

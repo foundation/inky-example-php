@@ -10,6 +10,20 @@ $dir = __DIR__;
 $dist = inky_example('09-transactional');
 $failures = 0;
 
+// EmailRenderer::render()'s cache-hit path returns \Inky\BuildResult with an
+// empty $warnings array unconditionally (see src/EmailRenderer.php) — it
+// never re-runs Inky::build() on a hit, so it has no warnings to report,
+// not because the template is actually warning-clean. Asserting "zero
+// warnings" against a run that's all cache hits would therefore pass even
+// if the templates were full of warnings, as long as a prior run had ever
+// cached them. So: clear the cache first, run once COLD and assert zero
+// warnings from THAT run (the only run that actually asks Inky::build() to
+// check), then run again and confirm the second run is all cache hits.
+$cacheDir = $dir . '/cache';
+foreach (glob($cacheDir . '/*.json') ?: [] as $cachedFile) {
+    unlink($cachedFile);
+}
+
 function run_capstone(string $dir): array
 {
     $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($dir . '/run.php');
@@ -31,8 +45,12 @@ if ($hitCount !== 3) {
     $failures++;
 }
 
-if (!preg_match('/total warnings:\s*(\d+)/', $secondOutput, $m) || (int) $m[1] !== 0) {
-    fwrite(STDERR, "09-transactional: expected zero warnings across all three templates, output:\n{$secondOutput}\n");
+// Checked against the FIRST (cold) run's output, not the second (warm) run
+// — a warm run always reports zero warnings regardless of template health
+// (see the comment above), so it can't tell us anything about whether the
+// templates are actually warning-clean.
+if (!preg_match('/total warnings:\s*(\d+)/', $firstOutput, $m) || (int) $m[1] !== 0) {
+    fwrite(STDERR, "09-transactional: expected zero warnings across all three templates on the cold run, output:\n{$firstOutput}\n");
     $failures++;
 }
 

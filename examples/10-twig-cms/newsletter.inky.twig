@@ -40,10 +40,13 @@
   anything at all, replacing it with an HTML COMMENT placeholder —
   comments, unlike bare text, are legal directly inside <table>, so the
   placeholder survives parsing exactly where it was, and the real
-  (untouched) content is spliced back in afterward. One consequence worth
-  knowing: content inside <raw> is invisible to inky's CSS inliner too, so
-  the product rows below use an explicit inline style="" instead of
-  relying on a framework class.
+  (untouched) content is spliced back in afterward. One thing NOT to draw
+  from this: <raw> content is re-injected before CSS inlining runs, so it
+  is NOT invisible to the inliner. The product rows below carry explicit
+  style="" attributes for a different reason — THIS example builds with
+  `inline_css: false` (see the CSS INLINING CONSTRAINT section below), so
+  no per-tag styles are inlined for anything in this document, and the
+  rows have to style themselves.
 
   TWO MORE REAL QUIRKS THIS EXAMPLE HAD TO WORK AROUND, found empirically
   while building it — all worth knowing if you hit unexplained diffs

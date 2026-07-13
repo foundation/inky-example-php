@@ -4,7 +4,7 @@ This is the **language-neutral porting contract** for the Inky example suite.
 It names, per example: what it teaches, which API surface it exercises, and
 the REQUIRED OUTPUT MARKERS — grep-able strings in `dist/NN-name/` that
 `composer run verify` (or the equivalent in each ported language) checks for.
-Stage C ports (Node, Python, Ruby, Rust) implement the same ten examples
+Stage C ports (Node, Python, Ruby, Go) implement the same ten examples
 against this spec and verify with the same markers, so a marker's exact
 string is normative across languages; only the API-call syntax differs per
 language.
@@ -359,8 +359,7 @@ un-rendered survives in the final documents).
 
 **10-twig-cms: engine-level findings.** Building this example
 empirically surfaced real inky-core behaviors worth flagging beyond
-the example itself (full detail, repro steps, and code pointers in
-task-4-report.md):
+the example itself:
 1. `<raw>` protects its content from inky's component-transform HTML5
    parse, but NOT from the separate parse CSS inlining performs over that
    transform's output — a bare, still-unexpanded loop can be
@@ -454,7 +453,7 @@ If a future theme value happens to have matching digit pairs (e.g.
 
 ## Porting notes for Stage C
 
-A checklist for whoever ports this suite to Node, Python, Ruby, or Rust.
+A checklist for whoever ports this suite to Node, Python, Ruby, or Go.
 Everything here is either a pointer back into this document or a fact that
 doesn't fit neatly under one example.
 

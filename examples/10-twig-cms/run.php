@@ -127,8 +127,9 @@ foreach ($recipients as $i => $recipient) {
 // per-recipient text repetition duplicates it verbatim, with no further
 // inky pass afterward to reconcile the seams between copies. The row
 // boundaries can end up whitespace-differently-normalized between the two
-// orders as a result — a genuine engine-level finding, reported in
-// task-4-report.md, not something papered over here.
+// orders as a result — a genuine engine-level finding (see SUITE.md's
+// "10-twig-cms: engine-level findings" subsection), not something papered
+// over here.
 //
 // It's ALSO exactly the whitespace inky-core's own break_long_lines
 // comment calls out as safe to disturb: "Whitespace between table elements
@@ -151,6 +152,7 @@ echo 'recipient 1 identical between orders (ignoring inter-tag whitespace): '
     . ($identical ? 'yes' : 'NO — DIVERGENCE') . "\n";
 if (!$identical) {
     fwrite(STDERR, "10-twig-cms: order-a-1.html and order-b-1.html diverged — see dist/10-twig-cms/ for a diff\n");
+    exit(1);
 }
 
 printf("orderA: %.2f ms, orderB: %.2f ms (shell built once)\n", $durationA, $durationB);

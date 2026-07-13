@@ -7,7 +7,7 @@ Twig/Total-CMS integration.
 
 This is the reference implementation for the suite: the same ten examples,
 against the same required output markers, are ported unchanged to Node,
-Python, Ruby, and Rust in Stage C. See [`SUITE.md`](SUITE.md) for the full,
+Python, Ruby, and Go in Stage C. See [`SUITE.md`](SUITE.md) for the full,
 language-neutral porting spec.
 
 > Requires Inky v2. See the main [inky](https://github.com/foundation/inky) repo.
@@ -35,7 +35,7 @@ composer run examples                             # runs every examples/*/run.ph
 composer run verify                               # same, plus greps every output for its required markers
 ```
 
-All ten examples should print `ok`. Output lands in `dist/NN-name/` (gitignored).
+`composer run verify` prints `ok` for all ten examples. Output lands in `dist/NN-name/` (gitignored).
 
 ## The ten examples
 

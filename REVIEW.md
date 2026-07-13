@@ -1,8 +1,8 @@
 # Review guide: Inky PHP example suite
 
 This is the flagship example suite — the template Stage C will port
-unchanged to Node, Python, Ruby, and Rust. Everything is committed and
-green at commit `7dae2bc`. This document is your entry point: how to run
+unchanged to Node, Python, Ruby, and Go. Everything is committed and
+green at the current HEAD. This document is your entry point: how to run
 it, a guided tour, and the three spots where I most want your taste before
 this becomes the porting contract.
 
@@ -66,9 +66,12 @@ tutorial, not just a script. In order of increasing sophistication:
 **1. Brand and copy voice.** Every example uses a fictional brand,
 "Northwind Coffee" (a roaster/subscription shop), with realistic
 transactional copy instead of lorem ipsum — e.g. 09-transactional's
-welcome email opens "Your beans are on the way" / "Track your Northwind
-Coffee subscription box," and the receipt reads "Thanks for your order,
-{{ customer.name }}! Here's what shipped." This voice was chosen because
+welcome email opens "Welcome, {{ customer.name }}!" / "Your {{ plan }}
+subscription is confirmed — your first bag ships this week, roasted to
+order" (01-quickstart's shipping notice is the one with "Your beans are
+on the way" / "Track your Northwind Coffee subscription box"), and the
+receipt reads "Thanks for your order, {{ customer.name }}! Here's what
+shipped." This voice was chosen because
 it gives natural excuses to write a welcome, a receipt, and a password
 reset without straining. If you want a different brand, a different
 register (more formal/less chatty), or a different vertical entirely, this
@@ -94,7 +97,8 @@ correct, one inky build per recipient) and inky-first (build the shell
 once, let Twig render it per recipient — the CMS fast path). In the
 current run, inky-first is roughly 4-5x faster per batch (see
 `dist/10-twig-cms`'s printed `orderA: X ms, orderB: Y ms` line, and
-task-4-report.md for a repeat measurement at ~5.5x). The example documents
+SUITE.md's "10-twig-cms: engine-level findings" subsection for the full
+detail behind that number). The example documents
 this as a genuine trade-off rather than picking a winner outright: the
 fast path requires `<raw>` around any surviving row-level tags and
 `inline_css: false` on the shell build (inlining happens once, after the
@@ -136,7 +140,7 @@ five-language contract.
 ## Next steps
 
 Stage C — porting these same ten examples, verified against the same
-markers in `SUITE.md`, to Node, Python, Ruby, and Rust — is queued but not
+markers in `SUITE.md`, to Node, Python, Ruby, and Go — is queued but not
 started. It begins only after you've reviewed this suite and given the
 go-ahead; nothing in Stage C depends on anything beyond what's in
 `SUITE.md` today, so feedback on the three decisions above is the highest-

@@ -373,6 +373,13 @@ takes) — two valid orders for combining a real Twig render with an inky
 `build`, and the one rule (`<raw>`) that makes the CMS's preferred fast
 path (build once, render per recipient) safe.
 
+**Engine substitution across ports:** Twig is exemplary of the Jinja
+family; ports substitute the closest Jinja-family engine (Python: Jinja2,
+Ruby: Liquid, Go: pongo2, Node: nunjucks), preserving delimiters, filter
+pipes, whitespace-control dashes, one host-registered custom filter, and
+autoescape-off semantics. The directory stays `10-twig-cms`; the template
+extension follows the engine.
+
 **Structure — the self-contained `emails/` base-root tree** (same
 convention as 09-transactional — see "The ten examples" intro above for
 why the capstones differ from 01–08):
@@ -582,20 +589,22 @@ doesn't fit neatly under one example.
    answer the same way this file does, even if the answer is "no special
    wiring needed."
 
-3. **Node has no pipeline binding.** The WASM/Node binding does not expose
-   `build`, `validate`, or `migrate` (no filesystem access from WASM; a
-   resolver-callback design is planned but not shipped). A straight port
-   of examples 02–10 is therefore not possible in Node today — every one
-   of them calls `build` (09 and 10 via `EmailRenderer`/direct calls), and
-   06/07 call `validate`/`migrateWithDetails`. The Node port should:
-   - Port 01-quickstart as-is — `transform` is the one pipeline-independent
-     API surface and is fully supported over WASM.
-   - For every other example, show the equivalent behavior through the
-     `inky` CLI (`inky build`, `inky validate`, `inky migrate`) invoked as
-     a subprocess from the example's entry point, rather than silently
-     skipping the example or faking the API surface. Say so explicitly in
-     each such example's own header comment — a reader should never
-     wonder why a "Node example" shells out.
+3. **Node has no `build`, but does have `validate`/`migrate`.** The
+   WASM/Node binding does not expose `build` (no filesystem access from
+   WASM; a resolver-callback design is planned but not shipped). `validate`
+   and `migrate`/`migrateWithDetails` take a template string and never
+   touch disk, so they ARE exported and fully usable. A straight port of
+   02–05 and 08–10 is therefore not possible in Node today — every one of
+   them calls `build`. The Node port should:
+   - Port 01, 06, and 07 against the WASM binding directly
+     (`transform`/`validate`/`migrateWithDetails` are filesystem-free); for
+     the build-dependent examples (02–05, 08–10), show the equivalent
+     behavior through the `inky` CLI (`inky build`) invoked as a subprocess
+     from the example's entry point, rather than silently skipping the
+     example or faking the API surface (align with the Node README's
+     "Node exception" section, which is the accurate model). Say so
+     explicitly in each such example's own header comment — a reader
+     should never wonder why a "Node example" shells out.
    - Do not weaken or reinterpret this suite's required output markers to
      make them CLI-shaped; the markers are about the resulting files in
      `dist/NN-name/`, and a CLI invocation produces the same files a
@@ -615,6 +624,27 @@ doesn't fit neatly under one example.
    `<raw>` tag and call it done — a reader who only sees 03 could
    reasonably conclude `<raw>` around row loops is always cosmetic, which
    is false for 10's shape.
+
+6. **Renderer-location convention: the name is normative, the directory is
+   not.** Every port's production-shaped service class from example 09 is
+   named `EmailRenderer` — that name is normative across languages — but
+   where it lives follows each language's own conventions, not PHP's:
+   PHP `src/EmailRenderer.php`, Python `src/email_renderer.py`, Ruby
+   `src/email_renderer.rb`, Go an `emailrenderer/` package, Node
+   `lib/email-renderer.mjs`.
+
+7. **Verbatim-asset prose must be language-neutral.** The four assets
+   copied byte-identical across every port (`shared/layout.html`,
+   `examples/09-transactional/emails/receipt.inky`,
+   `examples/09-transactional/emails/layouts/main.html`,
+   `examples/10-twig-cms/emails/layouts/main.html`) must stay
+   byte-identical, so their comment prose cannot reference any one
+   language's filenames or API syntax (no `run.php`, no `Inky::build()`)
+   — use language-neutral phrasing instead ("the build call", "this
+   example's entry point"). Language-specific teaching belongs in each
+   port's own driver files, not in these shared assets. Files that are
+   per-port-by-design (newsletter templates, test fixtures) are exempt
+   from this rule and may be localized freely.
 
 5. **Known live engine constraints to reproduce, not "fix" quietly** (see
    example 10 above for full detail): raw-preserved tags survive inky's

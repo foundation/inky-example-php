@@ -11,10 +11,11 @@
           <th align="right">Price</th>
         </tr>
         <!-- <raw> here is defense-in-depth, same reasoning as 03-data-merge:
-             EmailRenderer::render() (src/EmailRenderer.php, called from
-             run.php) passes this template's data through as the `data`
-             option on Inky::build(), which expands this loop into real <tr>
-             rows before the HTML parser runs, so it works without <raw> too.
+             EmailRenderer's render() (this repo's EmailRenderer source,
+             called from this example's entry point) passes this template's
+             data through as the `data` option on the build call, which
+             expands this loop into real <tr> rows before the HTML parser
+             runs, so it works without <raw> too.
              See 10-twig-cms for the case where <raw> is load-bearing instead. -->
         <raw>
         {% for item in items %}

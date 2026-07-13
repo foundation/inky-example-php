@@ -76,7 +76,7 @@ bootstrap.php          autoload + inky_example() dist-dir helper, shared by ever
 SUITE.md               language-neutral porting spec (the Stage C contract)
 REVIEW.md              guide for reviewing this suite: how to run it, what to look at
 src/EmailRenderer.php  small production-shaped render/theme/cache wrapper (example 09; the pattern example 10 adapts for a Twig CMS)
-shared/                brand layout, includes, SCSS themes used by every example
+shared/                brand layout, includes, SCSS themes used by examples 01-08
 examples/NN-name/      one directory per example: run.php (tutorial) + verify.php (smoke test)
 dist/                  build output (generated, gitignored)
 build.php              runs every example (composer run examples / verify)

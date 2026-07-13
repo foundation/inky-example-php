@@ -4,7 +4,7 @@
   Resolution rule (verified empirically in Task 1, see SUITE.md
   "Runtime requirements"): every relative src/href in this file — and in
   anything it includes — resolves against the ORIGINAL base_path passed
-  to Inky::build() for the top-level template, NOT against this file's
+  to the build call for the top-level template, NOT against this file's
   own directory. Since every example lives at examples/NN-name/ (one
   level below examples/, two levels below the repo root where shared/
   lives), paths here use "../../shared/..." — the traversal that works

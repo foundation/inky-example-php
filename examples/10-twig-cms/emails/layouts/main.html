@@ -1,11 +1,12 @@
 <!--
   Base layout for this capstone's self-contained emails/ tree — the exact
   shape a CMS like Total CMS points its template renderer at: one
-  base_path (here, emails/, the directory passed to Inky::build() one
-  level up in run.php), everything under it root-relative.
+  base_path (here, emails/, the directory passed to the build call one
+  level up in this example's entry point), everything under it
+  root-relative.
 
   KEY ENGINE RULE: every relative src/href anywhere in this tree resolves
-  against base_path — the ORIGINAL directory passed to Inky::build() —
+  against base_path — the ORIGINAL directory passed to the build call —
   regardless of which file contains the tag. It is NEVER re-resolved
   relative to the referencing file's own directory. This file lives one
   level below the root, in layouts/, but its own <include> tags below

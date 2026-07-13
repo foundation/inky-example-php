@@ -1,0 +1,12 @@
+{
+  "order_number": "NW-10482",
+  "customer": { "name": "Priya Patel" },
+  "gift": true,
+  "gift_message": "Happy roasting! — The Whitfield family",
+  "items": [
+    { "name": "Sumatra Mandheling, 12oz", "qty": 1, "price": "$16.00" },
+    { "name": "Ethiopia Yirgacheffe, 12oz", "qty": 2, "price": "$17.50" },
+    { "name": "Reusable steel tumbler", "qty": 1, "price": "$22.00" }
+  ],
+  "total": "$73.00"
+}

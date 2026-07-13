@@ -1,0 +1,9 @@
+<container>
+  <row>
+    <column lg="12">
+      <h1>Your beans are on the way</h1>
+      <p>Track your Northwind Coffee subscription box.</p>
+      <button href="https://northwindcoffee.example/track/NW-10482">Track Package</button>
+    </column>
+  </row>
+</container>

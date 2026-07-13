@@ -1,0 +1,14 @@
+<layout src="../../shared/layout.html" title="A new single-origin, just for you">
+<link rel="stylesheet" href="../../shared/themes/__THEME__.scss">
+<container>
+  <row>
+    <column lg="12">
+      <h1>Say hello to Kianjavato</h1>
+      <p>
+        Our newest single-origin — a bright, floral lot from the Kianjavato
+        cooperative — is in stock for a limited run. Members save 15%.
+      </p>
+      <button href="https://northwindcoffee.example/shop/kianjavato">Shop the Roast</button>
+    </column>
+  </row>
+</container>

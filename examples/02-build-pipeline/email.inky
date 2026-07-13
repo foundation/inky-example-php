@@ -1,0 +1,14 @@
+<layout src="../../shared/layout.html" title="Your subscription box has shipped">
+<link rel="stylesheet" href="../../shared/themes/northwind.scss">
+<container>
+  <row>
+    <column lg="12">
+      <h1>On its way!</h1>
+      <p>
+        Your Northwind Coffee subscription box shipped today and should
+        arrive within 3-5 business days.
+      </p>
+      <button href="https://northwindcoffee.example/track/NW-10482">Track Package</button>
+    </column>
+  </row>
+</container>

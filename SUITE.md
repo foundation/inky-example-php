@@ -35,23 +35,121 @@ in by the task that builds each example.
 
 ### 01 — quickstart
 
-*(filled in by the task that builds this example)*
+**Teaches:** the smallest possible thing Inky does — turning responsive-grid
+markup into email-safe table HTML, with no layout, theme, or data.
+
+**Inputs:** one inline template (≤15 lines): a `<container>`/`<row>`/`<column>`
+shipping notice with a single `<button>` component. No shared fixtures, no
+data file.
+
+**API surface:** `transform` only (the bare component-to-table conversion —
+no layout resolution, no SCSS, no data merge).
+
+**Output:** `output.html`. The run prints the template's and the output's
+byte sizes, showing how much a single `<button>` expands into.
+
+**Required output markers:** `class="button"` present (the button component
+transformed); no literal `<button` tag remains.
 
 ### 02 — build-pipeline
 
-*(filled in by the task that builds this example)*
+**Teaches:** the full build pipeline in one call — a shared brand layout
+(which itself pulls in the shared header/footer includes), a linked SCSS
+theme, and CSS inlining.
+
+**Inputs:** one template referencing the shared layout
+(`<layout src="../../shared/layout.html" title="...">`) and linking the
+shared northwind theme (`<link rel="stylesheet" href="../../shared/themes/northwind.scss">`,
+placed immediately after the `<layout>` tag). The layout brings in both
+shared includes (header + footer) automatically — the example does not
+declare its own `<include>` tags.
+
+**API surface:** `build` with `base_path` set to the example's own directory
+(every relative path in the template, and in anything it includes, resolves
+against that original base_path — see "Runtime requirements" below).
+
+**Output:** `email.html`.
+
+**Required output markers:** `<html` (the layout resolved); the shared
+header/footer wordmark text "Northwind Coffee" (proves both includes
+resolved — the template's own `<layout title="...">` overrides the
+layout's default title, so this string can only come from the includes);
+the compiled, unminified northwind theme color `#6f4e37` (proves the linked
+SCSS was found, compiled, and inlined).
 
 ### 03 — data-merge
 
-*(filled in by the task that builds this example)*
+**Teaches:** merging JSON data into a template — plain variables, a
+conditional, and a loop over line items rendered as real `<tr>` rows.
+
+**Inputs:** an order-confirmation template (using the shared layout) with
+`{{ customer.name }}`/`{{ order_number }}` variables, an
+`{% if gift %}...{% endif %}` conditional wrapping a `<callout>`, and a
+`{% for item in items %}` loop that emits one `<tr class="line-item">` per
+item inside a hand-written HTML `<table>`. `data.json` supplies an order
+with exactly 3 line items.
+
+**API surface:** `build` with the `data` option (turns on MiniJinja merging;
+without it, `{{ }}`/`{% %}` pass through untouched — useful when an ESP does
+its own merging).
+
+**The `<raw>` gotcha:** the loop's `{% for %}`/`{% endfor %}` markers are
+wrapped in `<raw>` because, sitting as bare text directly under `<table>`
+(outside a `<tr>`/`<td>`), they are exactly the shape of content that
+strict HTML5 tree-building treats as invalid and relocates out of the
+table — `<raw>` keeps that literal block untouched through that step. The
+template carries a 3-line comment explaining this at the loop site.
+
+**Output:** `order.html`.
+
+**Required output markers:** the order number `NW-10482`; exactly 3
+`<tr class="line-item"` rows; no `{%` residue anywhere in the output.
 
 ### 04 — theming
 
-*(filled in by the task that builds this example)*
+**Teaches:** building the identical template twice with a different linked
+SCSS theme each time.
+
+**Inputs:** one promo template (`promo.inky`) whose theme `<link>` href
+contains a placeholder (`__THEME__`, not real Inky syntax) instead of a
+literal theme name.
+
+**API surface:** `build` called twice against the same base template
+source; between calls, the placeholder is substituted with `northwind` or
+`midnight` before the source is handed to `build`. (The alternative —
+shipping two `<link>` lines and stripping one per build — was considered
+and rejected: the placeholder-substitution approach makes the one thing
+that changes between builds explicit at the call site instead of implicit
+inside the template.)
+
+**Output:** `promo-northwind.html`, `promo-midnight.html`.
+
+**Required output markers:** `#6f4e37` in `promo-northwind.html`; `#4a6cf7`
+in `promo-midnight.html`; the two files are not byte-identical.
 
 ### 05 — plain-text
 
-*(filled in by the task that builds this example)*
+**Teaches:** deriving a plain-text alternative alongside the HTML, for
+multipart transactional email.
+
+**Inputs:** a weekly digest template (using the shared layout) with a
+headline, several sections, and a CTA button.
+
+**API surface:** `build` with `plain_text: true` — `BuildResult::$text`
+carries the derived plain-text version (same content, tags and styling
+stripped) alongside `$html`.
+
+**Output:** `digest.html`, `digest.txt`.
+
+**Required output markers:** `digest.txt` exists; it shares the digest
+headline with `digest.html` (the plain-text renderer uppercases headings,
+so the comparison is case-insensitive); it contains no `<` character
+anywhere.
+
+`send.php` (repo root) reads this example's output and shows, with the
+real SMTP call commented out, how the html/text parts become a
+`multipart/alternative` message (PHPMailer usage plus the raw MIME
+structure spelled out by hand).
 
 ### 06 — validate-gate
 

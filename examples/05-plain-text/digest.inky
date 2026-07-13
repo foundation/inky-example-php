@@ -1,0 +1,29 @@
+<layout src="../../shared/layout.html" title="Your weekly Northwind Coffee digest">
+<container>
+  <row>
+    <column lg="12">
+      <h1>This week at Northwind Coffee</h1>
+      <p>Three things worth your attention before Sunday's roast run.</p>
+
+      <h2>New arrival: Kianjavato</h2>
+      <p>
+        A bright, floral single-origin from the Kianjavato cooperative just
+        landed. Subscribers get first access through Friday.
+      </p>
+
+      <h2>Pop-up tasting: Saturday, 10am</h2>
+      <p>
+        Join us at the roastery for a free cupping of this week's new
+        arrivals. Space is limited — reply to reserve a seat.
+      </p>
+
+      <h2>Brewing tip: let your beans rest</h2>
+      <p>
+        Beans degas for the first 3-5 days after roasting. Brewing too soon
+        can make a cup taste flat — give a fresh bag a few days to settle.
+      </p>
+
+      <button href="https://northwindcoffee.example/digest">Read Online</button>
+    </column>
+  </row>
+</container>

@@ -451,3 +451,80 @@ digit pairs, which is the condition under which `grass` would shorten
 them). Examples 04 and 09 should grep for these exact lowercase forms.
 If a future theme value happens to have matching digit pairs (e.g.
 `#aabbcc`), re-verify the compiled form before writing its marker.
+
+## Porting notes for Stage C
+
+A checklist for whoever ports this suite to Node, Python, Ruby, or Rust.
+Everything here is either a pointer back into this document or a fact that
+doesn't fit neatly under one example.
+
+1. **The `../../shared/...` convention is normative, not a PHP quirk.**
+   Every example lives at `examples/NN-name/`, one level under `examples/`,
+   itself one level under the repo root where `shared/` lives — so any
+   reference to `shared/` from an example's own template, or from within
+   `shared/layout.html`'s own includes, needs a double `../../`, not a
+   single `../`. See "Runtime requirements" §2 above for the empirical
+   verification and the exact failure mode of getting it wrong. Reproduce
+   the same `examples/NN-name/` → `shared/` depth in every port so the
+   traversal count doesn't have to change per language.
+
+2. **Composer/runtime notes are PHP-specific mechanics, not requirements
+   for other languages** — but each port needs its own equivalent sanity
+   check up front (that language's own Task 1, mirroring this suite's):
+   (a) does the local path-dependency mechanism (a path repository,
+   `pip install -e`, a `Gemfile` path source, a Cargo path dependency,
+   `npm link`) break the binding's dylib lookup the way a symlinked
+   Composer path repo could have but didn't (see "Runtime requirements"
+   §1)? (b) does the language's default dependency-stability policy need
+   an equivalent to this repo's `minimum-stability: dev` /
+   `prefer-stable: true` (a pure resolver artifact of depending on a
+   `dev-*` local package — nothing to do with the dylib)? Document the
+   answer the same way this file does, even if the answer is "no special
+   wiring needed."
+
+3. **Node has no pipeline binding.** The WASM/Node binding does not expose
+   `build`, `validate`, or `migrate` (no filesystem access from WASM; a
+   resolver-callback design is planned but not shipped). A straight port
+   of examples 02–10 is therefore not possible in Node today — every one
+   of them calls `build` (09 and 10 via `EmailRenderer`/direct calls), and
+   06/07 call `validate`/`migrateWithDetails`. The Node port should:
+   - Port 01-quickstart as-is — `transform` is the one pipeline-independent
+     API surface and is fully supported over WASM.
+   - For every other example, show the equivalent behavior through the
+     `inky` CLI (`inky build`, `inky validate`, `inky migrate`) invoked as
+     a subprocess from the example's entry point, rather than silently
+     skipping the example or faking the API surface. Say so explicitly in
+     each such example's own header comment — a reader should never
+     wonder why a "Node example" shells out.
+   - Do not weaken or reinterpret this suite's required output markers to
+     make them CLI-shaped; the markers are about the resulting files in
+     `dist/NN-name/`, and a CLI invocation produces the same files a
+     library call would.
+
+4. **`<raw>` is defense-in-depth in some examples, load-bearing in
+   others — reproduce the distinction, not just the tag.** In 03 (and in
+   09's receipt template) `data` is merged in the same call that builds
+   the template, so MiniJinja expands `{% for %}` before the HTML5 parse
+   ever runs; `<raw>` there is optional belt-and-suspenders, not required
+   for correctness. In 10, the loop must SURVIVE the build unexpanded (the
+   whole point of the cached-shell order), so at build time it's still
+   literal `{% for %}` text sitting in a `<table>` — without `<raw>`,
+   HTML5 foster-parenting silently relocates it out of the table and
+   corrupts the output for every recipient. Ports must carry this
+   distinction in both examples' teaching comments, not just copy the
+   `<raw>` tag and call it done — a reader who only sees 03 could
+   reasonably conclude `<raw>` around row loops is always cosmetic, which
+   is false for 10's shape.
+
+5. **Known live engine constraints to reproduce, not "fix" quietly** (see
+   example 10 above for full detail): raw-preserved tags survive inky's
+   own component-transform parse but NOT the separate parse the CSS
+   inliner runs afterward over that transform's output — work around it
+   with `inline_css: false` on any build whose output must still contain
+   unexpanded template tags, exactly as example 10 does. Separately,
+   inky-core's whitespace cleanup passes (`break_long_lines` /
+   `collapse_closing_tags`) are not invariant to *when* a templating loop
+   is expanded relative to inky's own build — only inter-tag whitespace is
+   affected (rendering-insignificant, per inky-core's own comment), never
+   content or structure, so any equality check across the two orders
+   should normalize only that, the way 10's `run.php` does.

@@ -1,0 +1,10 @@
+<span class="preheader" style="display:none;max-height:0;overflow:hidden;">Your Northwind Coffee order has shipped</span>
+<container>
+  <row>
+    <column lg="12">
+      <h1>Your order is on its way</h1>
+      <p>Thanks for your order! Your Northwind Coffee beans shipped today.</p>
+      <button href="https://northwindcoffee.example/orders/NW-10501">Track Your Order</button>
+    </column>
+  </row>
+</container>

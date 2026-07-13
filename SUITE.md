@@ -155,15 +155,104 @@ structure spelled out by hand).
 
 ### 06 — validate-gate
 
-*(filled in by the task that builds this example)*
+**Teaches:** using `validate` as a pre-send CI gate — block a send when a
+template has error-severity findings, but let warnings through.
+
+**Inputs:** two standalone component templates (no shared layout — `validate`
+operates on the source, transformed by the bare component pipeline, not the
+full build): `good.inky` (a shipping-notice snippet with a preheader `<span>`
+and a `<button href="...">`) and `bad.inky` (the same snippet with the
+preheader removed and the button's `href` dropped — this trips two distinct
+rules: `button-no-href`, an *error*, and `missing-preheader`, a *warning*).
+
+**API surface:** `validate` — returns a list of `{severity, rule, message}`
+diagnostics. A diagnostic is `error` severity (blocks the gate) or `warning`
+severity (reported but non-blocking).
+
+**The reusable gate shape:** a function `validate_or_fail(paths)` that
+validates each path, prints its diagnostics grouped by severity, and exits
+the process with a failure code the moment any path has an error-severity
+diagnostic. This is meant to be copied directly into a CI step or a
+pre-send hook — one call, no per-caller bookkeeping.
+
+**Runner seam:** this is the one example where "run it" and "run it
+successfully" are different things by design — the whole point is to show
+a failing gate. Called with explicit path(s) as arguments, `run.php` is the
+real gate: it exits 1 iff any given path has an error, exits 0 otherwise.
+Called with no arguments (the shape `composer run examples` uses for every
+example), it instead demonstrates BOTH outcomes — validating `good.inky`
+and `bad.inky` in turn, printing each one's diagnostics and the exit code
+the gate *would* have produced — without ever calling the real
+failure exit itself, so the suite runner can execute every example
+unconditionally. Ports should document this seam explicitly at the top of
+their equivalent entry point, and their suite runner should special-case
+this example's own exit code the same way (but must still run its smoke
+test).
+
+**Output:** none required for the demo path beyond stdout (a `report.txt`
+transcript is written to `dist/06-validate-gate/` as a courtesy, not a
+verified marker).
+
+**Required output markers (verified via subprocess, not dist files):**
+invoking the entry point with `bad.inky`'s path only exits 1, and its
+combined stdout+stderr contains both rule ids `button-no-href` and
+`missing-preheader`; invoking it with `good.inky`'s path only exits 0.
 
 ### 07 — migrate
 
-*(filled in by the task that builds this example)*
+**Teaches:** upgrading a v1 Inky template to v2 syntax programmatically,
+with a change report you can review before trusting the rewrite.
+
+**Inputs:** `legacy-v1.inky`, a two-column promo using v1 syntax throughout:
+`<columns large="6" small="12">` (plural tag, `large`/`small` attributes),
+`<h-line>`, `<spacer size="16">`, a `<button class="large expand">` (class-
+based modifiers), and a `<center><menu>...</menu></center>` wrapper.
+
+**API surface:** `migrateWithDetails` — returns the rewritten HTML plus an
+ordered list of human-readable change descriptions (one entry per
+migration rule that fired, not per match).
+
+**Output:** `migrated.inky` (the rewritten v2 template) and `email.html`
+(the migrated template run through the ordinary `build` pipeline, proving
+it's not just textually different but still builds cleanly).
+
+**Required output markers:** `migrated.inky` contains `lg="` and contains
+no `large="`; the change list has at least 5 entries; `email.html` contains
+`<table` (the migrated template still builds to table-based email markup).
 
 ### 08 — outlook-hybrid
 
-*(filled in by the task that builds this example)*
+**Teaches:** building specifically for Outlook desktop, which renders HTML
+email with Microsoft Word's layout engine rather than a browser engine —
+two build options plus one pair of components exist because of this:
+`hybrid: true` switches column layout from nested tables to div-based
+columns wrapped in MSO "ghost table" conditional comments (Outlook needs
+the table for layout, every other client gets lighter div markup);
+`bulletproof_buttons: true` renders every `<button>` as VML
+(`<v:roundrect>`) inside an MSO conditional, falling back to an ordinary
+table-based button everywhere else; and `<outlook>`/`<not-outlook>` let a
+template branch on client directly when the two need genuinely different
+markup, not just different CSS.
+
+**Inputs:** `launch.inky`, a product-launch announcement (shared layout +
+northwind theme) with an `<outlook>`/`<not-outlook>` pair around a banner
+(Outlook gets a plain bordered `<table>`, everyone else gets a CSS
+gradient `<div>` with rounded corners) and one ordinary `<button>`. A short
+comment directly above the pair explains, in one paragraph, what an MSO
+conditional comment is and why the split is needed — the one "gotcha"
+worth teaching here.
+
+**API surface:** `build` with `hybrid: true` and `bulletproof_buttons:
+true`, plus the `<outlook>`/`<not-outlook>` components used directly in
+the template.
+
+**Output:** `launch.html`.
+
+**Required output markers:** `<!--[if mso]>` present; `v:roundrect`
+present; every MSO conditional open (`[if mso]` or `[if !mso]`, from
+hybrid columns, bulletproof buttons, AND the explicit `<outlook>`/
+`<not-outlook>` pair) has a matching `[endif]` close — counts must be
+equal and non-zero.
 
 ### 09 — transactional (capstone)
 

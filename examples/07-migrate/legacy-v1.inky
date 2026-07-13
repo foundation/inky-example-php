@@ -1,0 +1,18 @@
+<container>
+  <row>
+    <columns large="6" small="12">
+      <h1>Fall Roast is back</h1>
+      <p>Our seasonal Fall Roast blend returns for a limited time — get it while it lasts.</p>
+      <button class="large expand" href="https://northwindcoffee.example/shop/fall-roast">Shop Now</button>
+    </columns>
+    <columns large="6" small="12">
+      <img src="https://northwindcoffee.example/img/fall-roast.jpg" alt="Bag of Fall Roast coffee beans" width="280">
+      <spacer size="16"></spacer>
+      <h-line></h-line>
+      <center><menu>
+        <item href="https://northwindcoffee.example/shop">Shop</item>
+        <item href="https://northwindcoffee.example/subscriptions">Subscribe</item>
+      </menu></center>
+    </columns>
+  </row>
+</container>

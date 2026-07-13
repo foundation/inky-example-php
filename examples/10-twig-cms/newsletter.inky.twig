@@ -45,7 +45,7 @@
   the product rows below use an explicit inline style="" instead of
   relying on a framework class.
 
-  THREE MORE REAL QUIRKS THIS EXAMPLE HAD TO WORK AROUND, found empirically
+  TWO MORE REAL QUIRKS THIS EXAMPLE HAD TO WORK AROUND, found empirically
   while building it — all worth knowing if you hit unexplained diffs
   between your own Order A/B outputs:
 
@@ -73,17 +73,18 @@
      check normalizes exactly that (and only that) before comparing — see
      the comment there for why that's principled and not a cop-out.
 
-  3. The price cell writes "$<span>...</span>" rather than putting the "$"
-     in the data. inky's layout/`<yield>` substitution (used by every
-     example with a shared layout, including this one) turned out to
-     mishandle a literal "$" immediately followed by digits in the child
-     content — e.g. "$17.00" silently became ".00" — because that
-     substitution is implemented as a plain string replace where "$" has
-     special meaning. It only bites content that's already fully rendered
-     BEFORE inky's layout step runs, which is exactly Order A's shape
-     (Twig, then inky) — Order B's shell never has real prices in it at
-     that stage, only field references. Splitting the "$" from the digits
-     with a tag boundary avoids it while still rendering as "$17.00".
+  CSS INLINING CONSTRAINT — both builds (Order A and Order B) must use
+  `inline_css: false`. CSS inlining runs a separate HTML5 parse over inky's
+  component-transform output. At shell-build time (Order B), the <raw>-
+  wrapped loop remains literal {% for %}/{% endfor %} text sitting beside a
+  <tr> inside <tbody>. That second parse's foster-parenting rules relocate
+  bare template text out of the table, the same failure mode that <raw>
+  prevents during the first parse. Setting `inline_css: false` sidesteps the
+  second parse entirely, keeping both orders byte-comparable (framework_css
+  still ships the compiled theme as a <style> block). See run.php's comment
+  for the full detail. This constraint does not apply to templates that
+  merge all data before inky runs (see 09-transactional, which uses
+  `inline_css: true`).
 
   Inky's OWN `data` option (see 03-data-merge, 09-transactional) speaks a
   MiniJinja dialect that is syntax-compatible with Twig for the simple
@@ -113,7 +114,7 @@
 {%- for product in products -%}
 <tr>
 <td style="padding:8px 0;">{{ product.name|upper }}</td>
-<td align="right" style="padding:8px 0;">$<span>{{ product.price }}</span></td>
+<td align="right" style="padding:8px 0;">${{ product.price }}</td>
 </tr>
 {%- endfor -%}
 </raw>

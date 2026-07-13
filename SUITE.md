@@ -316,10 +316,8 @@ speaks — and a `{% for product in products %}` loop over 3 static
 products). The loop is wrapped in `<raw>`, and here that's load-bearing,
 not defense-in-depth (see the file's own header comment for the full
 explanation, written for CMS integrators). The header comment also
-documents two narrower, empirically-found quirks (Twig whitespace-control
-dashes needed on the loop tags; a `"$<span>...</span>"` split to avoid a
-real inky-core bug in layout/yield substitution when literal `"$" +
-digits` reaches it) — both are load-bearing for this example and
+documents a narrower, empirically-found quirk (Twig whitespace-control
+dashes needed on the loop tags) — load-bearing for this example and
 instructive for anyone hitting the same shapes.
 
 **API surface:**
@@ -359,8 +357,8 @@ normalized; stdout contains a line matching `orderA: X ms, orderB: Y ms
 (shell built once)`; no output file contains a literal `{{` (nothing
 un-rendered survives in the final documents).
 
-**10-twig-cms: an engine-level finding.** Building this example
-empirically surfaced three real inky-core behaviors worth flagging beyond
+**10-twig-cms: engine-level findings.** Building this example
+empirically surfaced real inky-core behaviors worth flagging beyond
 the example itself (full detail, repro steps, and code pointers in
 task-4-report.md):
 1. `<raw>` protects its content from inky's component-transform HTML5
@@ -369,19 +367,7 @@ task-4-report.md):
    foster-parented out of its table at that second stage even though
    `<raw>` kept it safe at the first. Worked around here via
    `inline_css: false`.
-2. `process_layout`'s `<yield>` substitution (`crates/inky-core/src/include.rs`)
-   splices child content into the layout via `Regex::replace()`, which
-   interprets `$`-prefixed sequences in the REPLACEMENT text as
-   capture-group backreferences. Any literal `"$"` immediately followed by
-   digits or a word character in a layout-based template's rendered
-   content — e.g. a plain "$17.00" — silently loses the `"$"` and the
-   digits/word up to the next `"$"` or line boundary. This affects any
-   layout-based template with a literal dollar amount already present in
-   its content when `build()` runs (not just Twig-rendered content), and
-   is unrelated to `data`/MiniJinja, which merges AFTER this step and is
-   unaffected. Worked around here by splitting the static `"$"` from the
-   digits with a tag boundary (`"$<span>17.00</span>"`).
-3. Pipeline-level whitespace cleanup (`break_long_lines` /
+2. Pipeline-level whitespace cleanup (`break_long_lines` /
    `collapse_closing_tags` in `crates/inky-core/src/pipeline.rs`) inserts
    or folds newlines around table-structural tags unconditionally, based
    on whatever document is in front of it when it runs. Because Order A

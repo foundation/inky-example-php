@@ -42,11 +42,7 @@ $twig->addFilter(new \Twig\TwigFilter('loyalty_badge', function (string $tier): 
     };
 }));
 
-// No leading "$" here on purpose — the template supplies it as static text
-// ("$<span>...") rather than as part of the data. See the comment on the
-// price cell in newsletter.inky.twig for why: a literal "$" immediately
-// followed by digits, sitting in Twig-rendered content that reaches inky's
-// layout/yield substitution (Order A only), trips a real inky-core bug.
+// The template supplies the "$" as static text before the price variable.
 $products = [
     ['name' => 'Colombia Huila, 12oz', 'price' => '17.00'],
     ['name' => 'Guatemala Antigua, 12oz', 'price' => '18.50'],

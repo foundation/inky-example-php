@@ -31,6 +31,7 @@ language-neutral porting spec.
 cd ../inky && cargo build -p inky-ffi --release   # build libinky once
 cd ../inky-example-php
 composer install                                  # pulls in foundation/inky via the path repo
+# (in your own project, install from Packagist instead: composer require foundation/inky)
 composer run examples                             # runs every examples/*/run.php, writes dist/
 composer run verify                               # same, plus greps every output for its required markers
 ```
